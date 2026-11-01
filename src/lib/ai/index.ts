@@ -1,11 +1,13 @@
 import type { AIRevivalReport } from '@/lib/types';
 import { FallbackDeterministicProvider } from './fallbackProvider';
+import { HuggingFaceProvider } from './huggingFaceProvider';
 import { OllamaProvider } from './ollamaProvider';
 import { safeErrorMessage, type AIContext, type AIProvider } from './provider';
 
 export type { AIContext, AIProvider } from './provider';
 export { AIProviderError } from './provider';
 export { FallbackDeterministicProvider } from './fallbackProvider';
+export { HuggingFaceProvider } from './huggingFaceProvider';
 export { OllamaProvider } from './ollamaProvider';
 export { buildAIPrompt } from './promptBuilder';
 export { RevivalReportSchema, parseAIReport, parseAIReportOrThrow } from './schema';
@@ -13,14 +15,20 @@ export { RevivalReportSchema, parseAIReport, parseAIReportOrThrow } from './sche
 /**
  * Creates the configured primary provider.
  *
+ * Defaults to `huggingface` (local inference via TGI, vLLM, or local server).
+ * Supports `ollama` as alternative local backend.
  * `AI_PROVIDER=fallback` (or `none`) disables model inference entirely, which
  * is useful in CI and offline environments.
  */
 export function createPrimaryProvider(): AIProvider | null {
-  const configured = (process.env.AI_PROVIDER ?? 'ollama').toLowerCase();
+  const configured = (process.env.AI_PROVIDER ?? 'huggingface').toLowerCase();
 
   if (configured === 'fallback' || configured === 'none' || configured === 'disabled') {
     return null;
+  }
+
+  if (configured === 'huggingface' || configured === 'hf' || configured === 'hugging-face') {
+    return new HuggingFaceProvider();
   }
 
   if (configured === 'ollama') {

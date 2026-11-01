@@ -7,6 +7,28 @@ uses semantic versioning for its own releases while pinning framework versions e
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-01
+
+### Added
+
+#### AI Engine: Hugging Face Local Inference
+- Added `HuggingFaceProvider` (`src/lib/ai/huggingFaceProvider.ts`) for local Hugging Face model inference.
+  - Supports standard OpenAI/TGI-compatible chat completions endpoint (`POST /v1/chat/completions`).
+  - Supports native Hugging Face TGI / router generation endpoint (`POST /generate`).
+  - Supports bearer token authentication via `HF_TOKEN` / `HUGGINGFACE_API_KEY` for private/gated models.
+  - Implements multi-probe health checking across `/health`, `/v1/models`, and `/`.
+  - Configurable via `AI_PROVIDER=huggingface`, `AI_MODEL=google/gemma-3-1b-it`, `HF_BASE_URL=http://localhost:8080`.
+- Added `scripts/hf_local_server.py` lightweight local inference server script using host PyTorch and Transformers to serve cached models (such as `google/gemma-3-1b-it` or `google/gemma-2-2b-it`).
+- Added npm script `bun run hf:serve` in `package.json`.
+- Added comprehensive unit test suite `src/tests/huggingFaceProvider.test.ts` (12 test cases).
+- Preserved `OllamaProvider` as an alternative local backend option.
+
+### Changed
+- Migrated default `AI_PROVIDER` from `ollama` to `huggingface`.
+- Updated `.env.example` and `README.md` with Hugging Face configuration and quickstart commands.
+
+---
+
 ## [0.1.0] — 2026-11-01
 
 Stage 2 implementation: the complete P0 MVP.
@@ -58,29 +80,7 @@ Stage 2 implementation: the complete P0 MVP.
 
 - `POST /api/analyze` Server-Sent Events pipeline emitting `stage`, `complete`, and `error`
   events, with request validation and abort propagation.
-- `GET /api/analyze` configuration/status payload.
-- `POST /api/export` for GitHub-Flavored Markdown and JSON report downloads.
-- Cyberpunk dashboard with landing intake, sample repositories, live 8-stage tracker, radial
-  Revival Score gauge, confidence badge, five dimension cards, severity-filtered findings,
-  evidence modal, phased roadmap, static repository record, and export controls.
-- Ambient obsidian/cyan/emerald/violet design system with reduced-motion support.
-
-#### Project
-
-- 98 unit and end-to-end tests covering validation, scanning, analyzers, scoring, prompt
-  hardening, AI schema/fallback, Markdown export, and the full local pipeline.
-- README, environment example, implementation report, and this changelog.
-
-### Fixed
-
-- Prompt sanitizer parameter inferred a literal `600` type, rejecting call sites with other
-  caps.
-- TOML section regexes consumed the following header, causing every second dependency section
-  (Poetry and Cargo dev dependencies) to be skipped.
-
-### Security
-
-- No shell interpolation: Git is invoked with an argument vector and the URL follows `--`.
-- No untrusted repository code is executed; analysis is strictly static and read-only.
-- Clone directories are removed on success, failure, abort, and timeout.
-- Environment-only configuration; `.env.local` is git-ignored and no secrets are bundled.
+- `POST /api/export` generating formatted GitHub-Flavored Markdown or JSON downloads.
+- Cyberpunk archaeological dashboard in Next.js 16 + React 19: landing hero with quick-try repos,
+  real-time eight-stage progress tracker, radial Revival Score gauge, health dimension cards,
+  severity-filtered findings, evidence snippet modal, phased revival roadmap, and repository record.
