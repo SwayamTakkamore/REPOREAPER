@@ -5,6 +5,7 @@ REPOREAPER — Hugging Face Local Inference Server
 A lightweight, local inference server compatible with Hugging Face Text Generation
 Inference (TGI) and OpenAI chat completions endpoints (/v1/chat/completions).
 
+Supports dynamic model switching on the fly via POST /v1/switch_model.
 Runs directly on the host machine using installed PyTorch and Transformers.
 Zero Docker or cloud dependencies.
 
@@ -43,11 +44,11 @@ def find_cached_snapshot(model_name: str) -> Optional[str]:
     return None
 
 
-def create_app(model_name: str, device: str = "auto") -> FastAPI:
+def create_app(initial_model_name: str, device: str = "auto") -> FastAPI:
     app = FastAPI(
         title="REPOREAPER Hugging Face Local Inference Server",
         description="Local TGI / OpenAI compatible endpoint for repository revival synthesis.",
-        version="1.0.0",
+        version="1.1.0",
     )
 
     app.add_middleware(
@@ -58,43 +59,56 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Resolve local snapshot or model identifier
-    cached_path = find_cached_snapshot(model_name)
-    load_target = cached_path if cached_path else model_name
-    print(f"[*] Initializing model: {model_name}")
-    if cached_path:
-        print(f"[*] Found local cached snapshot at: {cached_path}")
+    state: Dict[str, Any] = {
+        "model_name": initial_model_name,
+        "tokenizer": None,
+        "model": None,
+        "has_cuda": torch.cuda.is_available(),
+    }
 
-    # Load tokenizer
-    print("[*] Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(load_target)
+    def load_active_model(target_model_name: str):
+        cached_path = find_cached_snapshot(target_model_name)
+        load_target = cached_path if cached_path else target_model_name
+        print(f"[*] Initializing model: {target_model_name}")
+        if cached_path:
+            print(f"[*] Found local cached snapshot at: {cached_path}")
 
-    # Determine PyTorch dtype and device map
-    has_cuda = torch.cuda.is_available()
-    torch_dtype = torch.bfloat16 if has_cuda else torch.float32
-    device_map = "auto" if has_cuda else "cpu"
+        print("[*] Loading tokenizer...")
+        tokenizer = AutoTokenizer.from_pretrained(load_target)
 
-    print(f"[*] Loading model weights (CUDA: {has_cuda}, dtype: {torch_dtype})...")
-    model = AutoModelForCausalLM.from_pretrained(
-        load_target,
-        dtype=torch_dtype,
-        device_map=device_map,
-    )
-    model.eval()
-    print(f"[✓] Model ready for local inference on {device_map}!")
+        has_cuda = state["has_cuda"]
+        torch_dtype = torch.bfloat16 if has_cuda else torch.float32
+        device_map = "auto" if has_cuda else "cpu"
+
+        print(f"[*] Loading model weights (CUDA: {has_cuda}, dtype: {torch_dtype})...")
+        model = AutoModelForCausalLM.from_pretrained(
+            load_target,
+            dtype=torch_dtype,
+            device_map=device_map,
+        )
+        model.eval()
+
+        # Update global state
+        state["model_name"] = target_model_name
+        state["tokenizer"] = tokenizer
+        state["model"] = model
+        print(f"[✓] Model {target_model_name} is active on {device_map}!")
+
+    # Initial model load
+    load_active_model(initial_model_name)
 
     @app.get("/health")
     async def health():
         return {
             "status": "ok",
-            "model": model_name,
-            "device": str(model.device),
-            "cuda_available": has_cuda,
+            "model": state["model_name"],
+            "device": str(state["model"].device),
+            "cuda_available": state["has_cuda"],
         }
 
     @app.get("/")
     async def root():
-        return {"service": "reporeaper-hf-local", "status": "running", "model": model_name}
+        return {"service": "reporeaper-hf-local", "status": "running", "model": state["model_name"]}
 
     @app.get("/v1/models")
     async def list_models():
@@ -102,13 +116,33 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
             "object": "list",
             "data": [
                 {
-                    "id": model_name,
+                    "id": state["model_name"],
                     "object": "model",
                     "created": int(time.time()),
                     "owned_by": "local",
                 }
             ],
         }
+
+    @app.post("/v1/switch_model")
+    async def switch_model(request: Request):
+        try:
+            body = await request.json()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+        new_model = body.get("model")
+        if not new_model or not isinstance(new_model, str):
+            raise HTTPException(status_code=400, detail="Missing required 'model' field")
+
+        if new_model == state["model_name"]:
+            return {"status": "ok", "model": new_model, "message": "Model already active"}
+
+        try:
+            load_active_model(new_model)
+            return {"status": "ok", "model": new_model, "message": f"Switched to {new_model}"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to switch model: {str(e)}")
 
     @app.post("/v1/chat/completions")
     async def chat_completions(request: Request):
@@ -125,7 +159,9 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
         temperature = float(body.get("temperature", 0.2))
 
         try:
-            # Format using chat template
+            tokenizer = state["tokenizer"]
+            model = state["model"]
+
             input_text = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=True
             )
@@ -140,7 +176,6 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
                     gen_kwargs["temperature"] = temperature
                 outputs = model.generate(**inputs, **gen_kwargs)
 
-            # Slice out the newly generated tokens
             input_length = inputs.input_ids.shape[1]
             generated_tokens = outputs[0][input_length:]
             output_text = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
@@ -149,7 +184,7 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
                 "id": f"chatcmpl-{int(time.time()*1000)}",
                 "object": "chat.completion",
                 "created": int(time.time()),
-                "model": model_name,
+                "model": state["model_name"],
                 "choices": [
                     {
                         "index": 0,
@@ -182,6 +217,9 @@ def create_app(model_name: str, device: str = "auto") -> FastAPI:
         temperature = float(parameters.get("temperature", 0.2))
 
         try:
+            tokenizer = state["tokenizer"]
+            model = state["model"]
+
             inputs = tokenizer(inputs_text, return_tensors="pt").to(model.device)
             with torch.no_grad():
                 outputs = model.generate(
@@ -220,7 +258,7 @@ def main():
 
     args = parser.parse_args()
 
-    app = create_app(model_name=args.model)
+    app = create_app(initial_model_name=args.model)
     print(f"[*] Starting local server on http://{args.host}:{args.port}")
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 
