@@ -39,4 +39,13 @@ Thumbs.db
 .idea/
 .vscode/
 
+# internal planning & reports
+PLAN.md
+ARCHITECTURE.md
+IMPLEMENTATION_REPORT.md
+TEST_REPORT.md
+SECURITY_AUDIT.md
+AUDIT_REPORT.md
+ACCEPTANCE_CRITERIA.md
+TASKS.md
 submission.md
