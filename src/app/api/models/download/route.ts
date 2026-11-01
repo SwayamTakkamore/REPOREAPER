@@ -16,9 +16,18 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: 'Request body must be valid JSON.' }, { status: 400 });
   }
 
-  const modelId = (body as Record<string, unknown>)?.modelId;
+  const bodyRecord = (body as Record<string, unknown>) ?? {};
+  const modelId =
+    typeof bodyRecord.modelId === 'string'
+      ? bodyRecord.modelId
+      : typeof bodyRecord.model === 'string'
+        ? bodyRecord.model
+        : null;
   if (typeof modelId !== 'string' || !modelId.trim()) {
-    return Response.json({ error: 'A non-empty "modelId" string is required.' }, { status: 400 });
+    return Response.json(
+      { error: 'A non-empty "modelId" (or "model") string is required.' },
+      { status: 400 },
+    );
   }
 
   try {
