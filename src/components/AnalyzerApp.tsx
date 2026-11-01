@@ -222,7 +222,7 @@ export default function AnalyzerApp() {
     };
 
     try {
-      const response = await fetch('/api/revive', {
+      const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
