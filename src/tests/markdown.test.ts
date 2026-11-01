@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 
 import { buildMarkdownReport, exportFileName } from '@/lib/report/markdown';
 import { HEALTHY_REPORT, payloadFor, createMemoryRepo, SPARSE_FILES } from './helpers/repoFixtures';

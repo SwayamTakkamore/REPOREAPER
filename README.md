@@ -34,20 +34,29 @@ outdated, or neglected codebase: what is broken, what is still solid, a determin
 | Language   | TypeScript 5, strict + `noUncheckedIndexedAccess`                             |
 | Validation | Zod (AI response schema, request bodies)                                      |
 | AI         | Local Hugging Face Inference (TGI / vLLM / Local server), default `google/gemma-3-1b-it` |
-| Runtime    | Bun for install, tests, and scripts                                           |
+| Test Runner| Vitest 3.x (ESM, zero-config, Node 24 compatible)                             |
+| Package Mgr| npm                                                                           |
 | Storage    | None — every scan is ephemeral                                                |
 
-No Docker, no Python environment, no database. The application runs natively on the host.
+No Docker, no Python virtual environment, no database. The application runs natively on the host.
 
 ## Quick start
 
 ```bash
-bun install
-bun run dev          # http://localhost:3000
+npm install
+npm run dev          # http://localhost:3000
 ```
 
 Open the page, paste a public GitHub repository URL such as
 `https://github.com/octocat/Hello-World`, and start the scan.
+
+### Running tests & typecheck
+
+```bash
+npm test             # run all 122 tests with vitest
+npm run test:watch   # run tests in interactive watch mode
+npm run typecheck    # verify TypeScript strict type-safety
+```
 
 ### Local Hugging Face AI inference
 
@@ -57,7 +66,7 @@ To serve local models (such as `google/gemma-3-1b-it` or `google/gemma-2-2b-it` 
 
 ```bash
 # Start the built-in local Hugging Face inference server:
-bun run hf:serve
+npm run hf:serve
 # or: python3 scripts/hf_local_server.py --model google/gemma-3-1b-it --port 8080
 ```
 
@@ -66,8 +75,8 @@ Without the server running, the app still works: it immediately returns the dete
 ### Production
 
 ```bash
-bun run build
-bun run start
+npm run build
+npm run start
 ```
 
 ## Configuration
@@ -75,8 +84,7 @@ bun run start
 Copy `.env.example` to `.env.local` and adjust as needed. Everything is optional.
 
 | Variable                     | Default                     | Purpose                                                                |
-| ---------------------------- | --------------------------- | ---------------------------------------------------------------------- |
-| `AI_PROVIDER`                | `huggingface`               | `huggingface` (default), `ollama`, or `fallback` / `none` / `disabled` |
+| ---------------------------- | --------------------------- | ---------------------------------------------------------------------- |\n| `AI_PROVIDER`                | `huggingface`               | `huggingface` (default), `ollama`, or `fallback` / `none` / `disabled` |
 | `AI_MODEL`                   | `google/gemma-3-1b-it`      | Hugging Face model identifier or path                                  |
 | `HF_BASE_URL`                | `http://localhost:8080`     | Local Hugging Face / TGI inference endpoint                            |
 | `HF_TOKEN`                   | _(empty)_                   | Optional Hugging Face token for gated models                           |
@@ -117,10 +125,13 @@ reporeaper/
   app/
     api/analyze/route.ts     SSE streaming analysis pipeline (8 stages)
     api/export/route.ts      Markdown / JSON download
+    api/models/              Steam-style model manager, download & stream endpoints
     page.tsx                 Server entry
   components/                Cyberpunk dashboard pieces
-    AnalyzerApp.tsx          Client state machine + SSE parser
+    AnalyzerApp.tsx          Client state machine + SSE parser + Model Vault
     LandingHero.tsx          URL intake
+    ModelLibraryModal.tsx    Steam-style model cards, search & storage telemetry
+    SteamDownloadDock.tsx    Persistent bottom live downloading dock (speed, ETA)
     StageProgress.tsx        8-stage live tracker
     ScoreGauge.tsx           Radial Revival Score
     HealthDimensionCard.tsx  Per-dimension evidence
@@ -142,16 +153,19 @@ reporeaper/
       orchestrator.ts        8-stage pipeline + cleanup guarantee
     scoring/scoringEngine.ts Deterministic 18-signal score
     ai/                      Prompt hardening, Hugging Face, Ollama, fallback, Zod
+    models/                  Model catalog, downloader & cache management
     report/markdown.ts       Report serialisation
     types/index.ts           Shared domain types
   scripts/
+    download_model.py        Hugging Face snapshot downloader with telemetry
     hf_local_server.py       Hugging Face local inference server
-  tests/                     Unit + end-to-end fixtures
+  tests/                     Unit + end-to-end fixtures (Vitest)
 ```
 
 Every analyzer consumes a small `RepoFs` interface rather than the filesystem directly, which
 keeps the heuristics testable with in-memory fixtures and keeps path access centralised in
-`fileScanner.ts`.\n
+`fileScanner.ts`.
+
 ## Security model
 
 - Only `https://github.com/<owner>/<repo>` URLs are accepted. Other protocols, hosts,

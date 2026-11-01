@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 
 import { analyzeEcosystem } from '@/lib/analyzer/ecosystemDetector';
 import { createMemoryRepo, HEALTHY_FILES } from './helpers/repoFixtures';

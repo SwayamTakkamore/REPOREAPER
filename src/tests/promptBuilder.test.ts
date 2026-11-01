@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 
 import { buildAIPrompt, PROMPT_LIMITS, sanitizeUntrustedText } from '@/lib/ai/promptBuilder';
 import { scoreRepository } from '@/lib/scoring/scoringEngine';

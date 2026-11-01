@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 
 import { analyzeQuality, QUALITY_LIMITS } from '@/lib/analyzer/qualityAnalyzer';
 import { createMemoryRepo, HEALTHY_FILES } from './helpers/repoFixtures';

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { createPrimaryProvider, HuggingFaceProvider } from '@/lib/ai';
 import { AIProviderError } from '@/lib/ai/provider';
@@ -187,7 +187,7 @@ describe('HuggingFaceProvider', () => {
     const provider = new HuggingFaceProvider();
     const { score, findings } = scoreRepository(HEALTHY_PAYLOAD);
 
-    expect(
+    await expect(
       provider.generateRevivalReport({
         payload: HEALTHY_PAYLOAD,
         score,
@@ -216,7 +216,7 @@ describe('HuggingFaceProvider', () => {
     const provider = new HuggingFaceProvider();
     const { score, findings } = scoreRepository(HEALTHY_PAYLOAD);
 
-    expect(
+    await expect(
       provider.generateRevivalReport({
         payload: HEALTHY_PAYLOAD,
         score,

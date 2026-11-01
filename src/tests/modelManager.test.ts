@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vitest';
 
 import {
   formatBytes,
@@ -102,11 +102,11 @@ describe('Model Manager Disk & Cache Operations', () => {
 
   test('deleteModel protects active model from deletion', async () => {
     const active = getActiveModel();
-    expect(deleteModel(active)).rejects.toThrow('Cannot delete active model');
+    await expect(deleteModel(active)).rejects.toThrow('Cannot delete active model');
   });
 
   test('deleteModel protects against path traversal', async () => {
-    expect(deleteModel('../../etc/passwd')).rejects.toThrow('Invalid model identifier');
+    await expect(deleteModel('../../etc/passwd')).rejects.toThrow('Invalid model identifier');
   });
 
   test('subscribeToProgress dispatches events to listeners', () => {
