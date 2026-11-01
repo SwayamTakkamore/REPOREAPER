@@ -42,10 +42,11 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError('Request body must be a JSON object.', 400);
   }
 
-  const repoUrl = (body as Record<string, unknown>).repoUrl;
-  if (typeof repoUrl !== 'string' || repoUrl.trim().length === 0) {
+  const rawUrl = (body as Record<string, unknown>).repoUrl ?? (body as Record<string, unknown>).url;
+  if (typeof rawUrl !== 'string' || rawUrl.trim().length === 0) {
     return jsonError('A non-empty "repoUrl" field is required.', 400);
   }
+  const repoUrl = rawUrl;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
