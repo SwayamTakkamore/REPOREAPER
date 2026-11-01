@@ -111,7 +111,9 @@ export default function HealthDimensionCard({ dimension, index = 0 }: HealthDime
           <span className="mono text-[10px] text-slate-500">{dimension.percentage}%</span>
         </div>
 
-        <p className="mt-3 text-xs leading-relaxed text-slate-400">{dimension.summary}</p>
+        <div className="mt-3 overflow-hidden">
+          <p className="text-xs leading-relaxed text-slate-400 transition-all duration-200">{dimension.summary}</p>
+        </div>
       </div>
 
       <button

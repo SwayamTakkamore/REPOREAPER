@@ -46,31 +46,36 @@ const PHASES: Array<{
 
 function ActionItem({ action, accent }: { action: RoadmapAction; accent: string }) {
   return (
-    <li className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3.5 transition hover:border-white/15">
+    <li className="group rounded-xl border border-white/[0.07] bg-white/[0.02] p-3.5 transition hover:border-white/15">
       <div className="flex items-start justify-between gap-2">
         <h4 className="text-xs font-semibold leading-snug text-slate-100">{action.title}</h4>
         <span className={`${EFFORT_CHIP[action.effort]} shrink-0`}>{action.effort} effort</span>
       </div>
 
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-400">{action.rationale}</p>
+      <div className="mt-2 overflow-hidden">
+        <p className="text-[11px] leading-relaxed text-slate-400">{action.rationale}</p>
+      </div>
+
+      <div className="overflow-hidden transition-all duration-300 max-h-0 opacity-0 group-hover:max-h-40 group-hover:opacity-100">
+        <p className="mt-2 text-[11px] leading-relaxed text-slate-400">{action.rationale}</p>
+        {action.relatedFindings.length > 0 ? (
+          <div className="mt-2.5 flex flex-wrap gap-1">
+            {action.relatedFindings.map((id) => (
+              <span
+                key={id}
+                className="rounded border border-white/[0.07] bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-slate-500"
+              >
+                {id}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <p className={`mt-2.5 flex items-start gap-1.5 text-[11px] leading-relaxed ${accent}`}>
         <ArrowUpRight className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
         {action.expectedBenefit}
       </p>
-
-      {action.relatedFindings.length > 0 ? (
-        <div className="mt-2.5 flex flex-wrap gap-1">
-          {action.relatedFindings.map((id) => (
-            <span
-              key={id}
-              className="rounded border border-white/[0.07] bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-slate-500"
-            >
-              {id}
-            </span>
-          ))}
-        </div>
-      ) : null}
     </li>
   );
 }

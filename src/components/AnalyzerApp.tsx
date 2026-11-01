@@ -350,49 +350,45 @@ export default function AnalyzerApp() {
   );
 
   const header = (
-    <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-obsidian-950/80 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-obsidian-950/80 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-2.5 sm:px-8">
         <button
           type="button"
           onClick={reset}
           className="group flex items-center gap-2.5 rounded-lg py-1 pr-2 transition hover:opacity-90"
           aria-label="REPOREAPER — return to start"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyber-cyan/30 bg-cyber-cyan/[0.08] text-cyber-cyan transition group-hover:shadow-glow-cyan">
-            <Skull className="h-4 w-4" aria-hidden="true" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-cyber-cyan/30 bg-cyber-cyan/[0.08] text-cyber-cyan transition group-hover:shadow-glow-cyan">
+            <Skull className="h-3.5 w-3.5" aria-hidden="true" />
           </span>
-          <span className="flex items-baseline text-lg font-black leading-none tracking-tight">
+          <span className="flex items-baseline text-base font-black leading-none tracking-tight">
             <span className="text-white/90">REPO</span>
             <span className="text-gradient">REAPER</span>
           </span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Steam-style Model Vault Button */}
           <button
             type="button"
             onClick={() => setIsVaultOpen(true)}
-            className="btn-ghost relative flex items-center gap-2 border border-cyber-cyan/30 bg-cyber-cyan/[0.05] text-cyber-cyan hover:border-cyber-cyan/60 hover:bg-cyber-cyan/[0.1] hover:text-white"
+            className="btn-ghost relative flex items-center gap-2 border border-white/10 bg-white/[0.02] text-slate-300 hover:border-cyan-400/40 hover:bg-cyan-400/5 hover:text-cyan-100"
             title="Open AI Model Vault"
             aria-label="Open AI Model Vault"
           >
             <Database className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline font-mono text-[11px]">Vault</span>
-            <span className="hidden md:inline-flex items-center gap-1.5 rounded bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
-              {activeModel.split('/').pop()?.slice(0, 16)}
+            <span className="hidden sm:inline font-mono text-[10px]">Model Vault</span>
+            <span className="hidden md:inline-flex items-center gap-1.5 rounded bg-black/40 px-1.5 py-0.5 font-mono text-[9px] text-slate-400">
+              {activeModel.split('/').pop()?.slice(0, 12)}
             </span>
             {activeDownload && activeDownload.status === 'downloading' && (
-              <span className="relative flex h-2 w-2">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
               </span>
             )}
           </button>
 
-          <span className="chip chip-emerald hidden sm:inline-flex">
-            <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-            static only · zero execution
-          </span>
           <span className="hidden h-4 w-px bg-white/10 sm:block" aria-hidden="true" />
           <a
             href="https://github.com"
@@ -400,12 +396,13 @@ export default function AnalyzerApp() {
             rel="noopener noreferrer"
             className="btn-ghost"
             aria-label="GitHub"
+            title="GitHub"
           >
             <Github className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
           {phase !== 'idle' ? (
-            <button type="button" onClick={reset} className="btn-ghost">
+            <button type="button" onClick={reset} className="btn-ghost" title="New scan">
               <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">New scan</span>
             </button>
@@ -453,21 +450,32 @@ export default function AnalyzerApp() {
                   script from the repository is ever executed.
                 </p>
 
-                <dl className="mt-4 space-y-2">
+                <div className="mt-4 flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-cyber-cyan" aria-hidden="true" />
+                  <span className="flex-1 font-mono text-[11px] text-slate-300">Scanning in progress...</span>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4].map((i) => (
+                      <span key={i} className="h-1.5 w-1.5 rounded-full bg-cyber-cyan/40 animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+                    ))}
+                  </div>
+                </div>
+
+                <dl className="mt-3 space-y-1.5">
                   {[
-                    { label: 'clone depth', value: '1' },
-                    { label: 'file ceiling', value: '1,000' },
-                    { label: 'depth ceiling', value: '6' },
-                    { label: 'clone timeout', value: '30s' },
+                    { label: 'clone depth', value: '1', tooltip: 'Shallow clone to minimize data transfer' },
+                    { label: 'file ceiling', value: '1,000', tooltip: 'Maximum files scanned per repository' },
+                    { label: 'depth ceiling', value: '6', tooltip: 'Directory traversal depth limit' },
+                    { label: 'clone timeout', value: '30s', tooltip: 'Maximum time for clone operation' },
                   ].map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+                      className="group relative flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 transition hover:border-cyan-400/30"
+                      title={item.tooltip}
                     >
-                      <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                      <dt className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-500">
                         {item.label}
                       </dt>
-                      <dd className="mono text-[11px] text-slate-200">{item.value}</dd>
+                      <dd className="mono text-[10px] text-slate-300">{item.value}</dd>
                     </div>
                   ))}
                 </dl>

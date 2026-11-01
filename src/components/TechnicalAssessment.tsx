@@ -65,22 +65,32 @@ export default function TechnicalAssessment({ ai, score }: TechnicalAssessmentPr
               <ScanLine className="h-3.5 w-3.5 text-cyber-cyan" aria-hidden="true" />
               Root causes
             </h3>
-            <ol className="mt-2.5 space-y-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               {ai.rootCauses.map((cause, index) => (
-                <li key={cause} className="flex gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
-                  <span className="mono shrink-0 text-[10px] text-cyber-cyan/70">
-                    R{String(index + 1).padStart(2, '0')}
+                <div key={cause} className="group relative">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 font-mono text-[11px] text-cyan-200 transition hover:border-cyan-400/60 hover:bg-cyan-400/20 hover:shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+                    <span className="text-cyan-400/70">R{String(index + 1).padStart(2, '0')}</span>
+                    {cause.split(':')[0] || cause.slice(0, 30)}
                   </span>
-                  <span className="text-xs leading-relaxed text-slate-300">{cause}</span>
-                </li>
+                  <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 hidden max-w-xs rounded-lg border border-white/10 bg-obsidian-900/95 px-3 py-2 text-xs leading-relaxed text-slate-200 shadow-2xl backdrop-blur-xl group-hover:block">
+                    {cause}
+                    <div className="absolute left-4 top-full h-2 w-2 -translate-y-1/2 rotate-45 border-b border-r border-white/10 bg-obsidian-900/95"></div>
+                  </div>
+                </div>
               ))}
-            </ol>
+            </div>
           </div>
         ) : null}
 
         <div className="rounded-xl border border-white/[0.07] bg-black/25 px-4 py-3">
           <p className="eyebrow">Confidence note</p>
           <p className="mt-1.5 text-xs leading-relaxed text-slate-400">{ai.confidenceNote}</p>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-cyber-cyan via-cyber-violet to-cyber-emerald transition-all duration-700"
+              style={{ width: `${score.confidence}%` }}
+            />
+          </div>
           <p className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] text-slate-600">
             <span>
               score {score.total}/{score.maxTotal} · {score.label}
